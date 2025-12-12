@@ -5,7 +5,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const multer = require('multer');
 const base64Img = require('base64-img');
 const crypto = require('crypto');
-
+const cors = require('cors');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
 
@@ -24,6 +24,14 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
     res.sendStatus(200);
 });
 
+app.use(cors({
+  origin: 'https://legendary-brigadeiros-6e3e98.netlify.app',
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+app.options('*', cors());
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const RANKS = {

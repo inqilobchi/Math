@@ -24,14 +24,13 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
     res.sendStatus(200);
 });
 
-app.use(cors({
-  origin: '*',
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
-app.options('*', cors());
+   app.use(cors({
+     origin: 'https://shiny-faloodeh-5c042c.netlify.app', // Aniq Netlify URL
+     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allowedHeaders: ["Content-Type", "Authorization"]
+   }));
+   app.options('*', cors());
+   
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const RANKS = {
@@ -772,6 +771,6 @@ const loadData = async () => {
 
 loadData();
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+app.listen(procress.env.PORT, () => {
+  console.log('Server running on port PORT');
 });

@@ -25,7 +25,7 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
 });
 
 app.use(cors({
-  origin: 'https://legendary-brigadeiros-6e3e98.netlify.app',
+  origin: '*',
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]

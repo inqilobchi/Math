@@ -10,7 +10,19 @@ const User = require('./models/User');
 const Payment = require('./models/Payment');
 
 const app = express();
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: { port: process.env.PORT || 3000 } });
+
+// Render URL
+const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
+
+// Webhook o‘rnatish
+bot.setWebHook(WEBHOOK_URL);
+
+// Telegram webhook callback route
+app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+});
 
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 

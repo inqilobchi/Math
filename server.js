@@ -771,6 +771,6 @@ const loadData = async () => {
 
 loadData();
 
-app.listen(procress.env.PORT, () => {
+app.listen(process.env.PORT, () => {
   console.log('Server running on port PORT');
 });

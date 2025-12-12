@@ -24,7 +24,7 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
 });
 
    app.use(cors({
-     origin: 'https://clever-pie-8851a6.netlify.app', // Aniq Netlify URL
+     origin: 'https://papaya-kitsune-a8ea3e.netlify.app', // Aniq Netlify URL
      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allowedHeaders: ["Content-Type", "Authorization"]
    }));

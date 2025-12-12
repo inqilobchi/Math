@@ -439,7 +439,7 @@ app.post('/api/submit-payment', async (req, res) => {
 // ===== ADMIN PAYMENT =====
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('ap_') || query.data.startsWith('rj_')) {
-    if (query.from_user.id.toString() !== process.env.ADMIN_ID) {
+    if (query.from.id.toString() !== process.env.ADMIN_ID) {
       await bot.answerCallbackQuery(query.id, { text: "❌ Sizda ruxsat yo'q!" });
       return;
     }

@@ -498,7 +498,7 @@ bot.on('callback_query', async (query) => {
 
 // ===== ADMIN COMMANDS =====
 bot.onText(/\/panel|\/admin/, async (msg) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const totalUsers = await User.countDocuments();
   const premiumUsers = await User.countDocuments({ isPremium: true });

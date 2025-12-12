@@ -8,7 +8,6 @@ const crypto = require('crypto');
 const cors = require('cors');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
-const PORT = process.env.PORT || 3000
 const app = express();
 const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: { port: process.env.PORT || 3000 } });
 
@@ -771,6 +770,6 @@ const loadData = async () => {
 
 loadData();
 
-app.listen(PORT, () => {
-  console.log('Server running on port PORT');
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
 });

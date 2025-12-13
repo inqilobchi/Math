@@ -278,8 +278,8 @@ bot.onText(/^ℹ️ Yordam$/, async (msg) => {
 
 // ===== WEB APP DATA =====
 bot.on('web_app_data', async (msg) => {
-  const uid = msg.from_user.id.toString();
-  let u = await ensureUser(uid, msg.from_user.first_name);
+  const uid = msg.from.id.toString();
+  let u = await ensureUser(uid, msg.from.first_name);
 
   try {
     const data = JSON.parse(msg.web_app_data.data);
@@ -379,13 +379,13 @@ bot.on('web_app_data', async (msg) => {
 
 // ===== PHOTO HANDLER =====
 bot.on('photo', async (msg) => {
-  const uid = msg.from_user.id.toString();
+  const uid = msg.from.id.toString();
   if (!(uid in awaitingPhoto)) return;
 
   const info = awaitingPhoto[uid];
   delete awaitingPhoto[uid];
 
-  const u = await ensureUser(uid, msg.from_user.first_name);
+  const u = await ensureUser(uid, msg.from.first_name);
   const payId = `p${Date.now()}`;
   const payment = new Payment({
     id: payId,

@@ -23,12 +23,12 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
     res.sendStatus(200);
 });
 
-   app.use(cors({
-     origin: 'https://phenomenal-sunburst-92da4c.netlify.app', // Aniq Netlify URL
-     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allowedHeaders: ["Content-Type", "Authorization"]
-   }));
-   app.options('*', cors());
+app.use(cors({
+  origin: '*',  // Barcha origin'larni ruxsat berish (test uchun)
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+app.options('*', cors());  // Saqlang
    
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 

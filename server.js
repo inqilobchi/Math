@@ -510,7 +510,7 @@ bot.onText(/\/panel|\/admin/, async (msg) => {
 });
 
 bot.onText(/\/users/, async (msg) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const users = await User.find().sort({ totalScore: -1 }).limit(30);
   if (users.length === 0) {
@@ -529,7 +529,7 @@ bot.onText(/\/users/, async (msg) => {
 });
 
 bot.onText(/\/pending/, async (msg) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const pending = await Payment.find({ status: 'pending' });
   if (pending.length === 0) {
@@ -551,7 +551,7 @@ bot.onText(/\/pending/, async (msg) => {
 });
 
 bot.onText(/\/bonus (.+)/, async (msg, match) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const parts = match[1].split(' ');
   if (parts.length !== 2) {
@@ -585,7 +585,7 @@ bot.onText(/\/bonus (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/setrank (.+)/, async (msg, match) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const parts = match[1].split(' ');
   if (parts.length !== 2) {
@@ -620,7 +620,7 @@ bot.onText(/\/setrank (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/setpremium (.+)/, async (msg, match) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const uid = match[1].trim();
   const u = await User.findOne({ id: uid });
@@ -642,7 +642,7 @@ bot.onText(/\/setpremium (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/search (.+)/, async (msg, match) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const query = match[1].toLowerCase();
   const results = await User.find({ name: { $regex: query, $options: 'i' } }).limit(10);
@@ -663,7 +663,7 @@ bot.onText(/\/search (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/user (.+)/, async (msg, match) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   const uid = match[1].trim();
   const u = await User.findOne({ id: uid });
@@ -689,7 +689,7 @@ bot.onText(/\/user (.+)/, async (msg, match) => {
 
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('adm_')) {
-    if (query.from_user.id.toString() !== process.env.ADMIN_ID) return;
+    if (query.from.id.toString() !== process.env.ADMIN_ID) return;
 
     const parts = query.data.split('_');
     const action = parts[1];
@@ -724,12 +724,12 @@ bot.on('callback_query', async (query) => {
 });
 
 bot.onText(/\/broadcast/, async (msg) => {
-  if (msg.from_user.id.toString() !== process.env.ADMIN_ID) return;
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
   await bot.sendMessage(msg.chat.id, "📢 BROADCAST\n\nXabaringizni yozing.\nBekor qilish: /cancel");
 
   const doBroadcast = async (response) => {
-    if (response.from_user.id.toString() !== process.env.ADMIN_ID) return;
+    if (response.from.id.toString() !== process.env.ADMIN_ID) return;
 
     if (response.text === '/cancel') {
       await bot.sendMessage(response.chat.id, "❌ Bekor qilindi.");
@@ -756,7 +756,45 @@ bot.onText(/\/broadcast/, async (msg) => {
 
   bot.once('message', doBroadcast);
 });
+app.post('/api/approve-payment', async (req, res) => {
+    try {
+        const { paymentId, adminId } = req.body;
+        if (adminId !== process.env.ADMIN_ID) return res.status(403).json({ error: 'Not admin' });
+        const payment = await Payment.findOne({ id: paymentId });
+        if (!payment) return res.status(404).json({ error: 'Payment not found' });
+        payment.status = 'approved';
+        const user = await User.findOne({ id: payment.userId });
+        if (payment.type === 'premium') user.isPremium = true;
+        else if (payment.type === 'rank') user.rank = payment.targetRank;
+        await user.save();
+        await payment.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
+app.post('/api/reject-payment', async (req, res) => {
+    try {
+        const { paymentId, adminId } = req.body;
+        if (adminId !== process.env.ADMIN_ID) return res.status(403).json({ error: 'Not admin' });
+        const payment = await Payment.findOne({ id: paymentId });
+        if (!payment) return res.status(404).json({ error: 'Payment not found' });
+        payment.status = 'rejected';
+        await payment.save();
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+app.get('/api/admin-payments', async (req, res) => {
+    try {
+        const pending = await Payment.find({ status: 'pending' });
+        res.json(pending);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 // ===== LOAD AND RUN =====
 const loadData = async () => {
   const userCount = await User.countDocuments();

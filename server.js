@@ -10,7 +10,7 @@ const User = require('./models/User');
 const Payment = require('./models/Payment');
 const app = express();
 const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: { port: process.env.PORT || 3000 } });
-const port = process.env.PORT
+
 // Render URL
 const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
 

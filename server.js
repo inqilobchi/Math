@@ -10,7 +10,7 @@ const User = require('./models/User');
 const Payment = require('./models/Payment');
 const app = express();
 const bot = new TelegramBot(process.env.BOT_TOKEN, { webHook: { port: process.env.PORT || 3000 } });
-
+const port = process.env.PORT
 // Render URL
 const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
 
@@ -34,51 +34,59 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 const RANKS = {
   bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 5000, mult: 1, ref: 50 },
-  silver: { name: 'Silver', icon: '🥈', min: 10000, max: 10000, mult: 1.2, ref: 75 },
-  gold: { name: 'Gold', icon: '🥇', min: 20000, max: 15000, mult: 1.5, ref: 100 },
-  pro: { name: 'Pro', icon: '💎', min: 30000, max: 999999, mult: 2, ref: 150 }
+  silver: { name: 'Silver', icon: '🥈', min: 5000, max: 10000, mult: 1.2, ref: 75 },
+  gold: { name: 'Gold', icon: '🥇', min: 10000, max: 15000, mult: 1.5, ref: 100 },
+  pro: { name: 'Pro', icon: '💎', min: 15000, max: 999999, mult: 2, ref: 150 }
 };
+const RANK_ORDER = ['bronze', 'silver', 'gold', 'pro'];
 app.get('/api/user-data', async (req, res) => {
-    try {
-        const uid = req.query.uid || 'default'; // Telegram ID ni query orqali olish (mini app'dan)
-        const user = await User.findOne({ id: uid });
-        if (user) {
-            res.json(user.toObject());
-        } else {
-            res.status(404).json({ error: 'User not found' });
-        }
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+  try {
+    const uid = req.query.uid; // 'default' olib tashlandi, majburiy
+    if (!uid) return res.status(400).json({ error: 'UID required' });
+    const user = await User.findOne({ id: uid });
+    if (user) {
+      res.json(user.toObject());
+    } else {
+      res.status(404).json({ error: 'User not found' });
     }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
-// Yangi endpoint: Leaderboard olish
 app.get('/api/leaderboard', async (req, res) => {
-    try {
-        const users = await User.find().sort({ totalScore: -1 }).limit(50); // Top 50
-        res.json(users.map(u => ({ id: u.id, name: u.name, avatar: u.avatar, rank: u.rank, score: u.totalScore, isPremium: u.isPremium })));
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+  try {
+    const users = await User.find().sort({ totalScore: -1 }).limit(50);
+    res.json(users.map(u => ({ id: u.id, name: u.name, avatar: u.avatar, rank: u.rank, score: u.totalScore, isPremium: u.isPremium })));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 app.post('/api/update-stats', async (req, res) => {
-    try {
-        const { userId, totalScore, gamesPlayed, correct, wrong, rank, name, avatar } = req.body;
-        let user = await User.findOne({ id: userId });
-        if (!user) {
-            user = new User({ id: userId, name, avatar });
-        }
-        user.totalScore = totalScore;
-        user.gamesPlayed = gamesPlayed;
-        user.correct = correct;
-        user.wrong = wrong;
-        user.rank = rank;
-        await user.save();
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+  try {
+    const { userId, totalScore, gamesPlayed, correct, wrong, rank, name, avatar } = req.body;
+    let user = await User.findOne({ id: userId });
+    if (!user) {
+      user = new User({ id: userId, name, avatar });
     }
+    user.totalScore = totalScore;
+    user.gamesPlayed = gamesPlayed;
+    user.correct = correct;
+    user.wrong = wrong;
+    user.rank = rank;
+    user.name = name || user.name;
+    user.avatar = avatar || user.avatar;
+    await user.save();
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
-const RANK_ORDER = ['bronze', 'silver', 'gold', 'pro'];
+function getRank(score) {
+  if (score >= 15000) return 'pro';
+  if (score >= 10000) return 'gold';
+  if (score >= 5000) return 'silver';
+  return 'bronze';
+}
 
 let awaitingPhoto = {};
 
@@ -87,12 +95,6 @@ app.use(express.static('public'));
 
 const upload = multer({ dest: 'uploads/' });
 
-function getRank(score) {
-  if (score >= 30000) return 'pro';
-  if (score >= 20000) return 'gold';
-  if (score >= 10000) return 'silver';
-  return 'bronze';
-}
 
 async function checkSub(uid) {
   try {
@@ -123,12 +125,11 @@ function mainMenu(subscribed = true, userStats = null) {
     return m;
   }
 
-  let url = process.env.MINI_APP_URL;
+let url = process.env.MINI_APP_URL;
   if (userStats) {
     const encodedStats = encodeURIComponent(JSON.stringify(userStats));
-    url += `#stats=${encodedStats}`;
+    url += `?stats=${encodedStats}`;
   }
-
   const menu = {
     keyboard: [
       [{ text: "🎮 O'ynash", web_app: { url } }],
@@ -328,6 +329,8 @@ bot.on('web_app_data', async (msg) => {
       u.correct = data.correct;
       u.wrong = data.wrong;
       u.rank = data.rank;
+      u.name = data.name || u.name;
+      u.avatar = data.avatar || u.avatar;
       await u.save();
     } else if (action === 'buy_rank') {
       const rank = data.rank;
@@ -808,6 +811,6 @@ const loadData = async () => {
 
 loadData();
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });

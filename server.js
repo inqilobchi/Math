@@ -18,12 +18,15 @@ const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
 // Webhook o‘rnatish
 bot.setWebHook(WEBHOOK_URL);
 
-// Telegram webhook callback route
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
-    bot.processUpdate(req.body);
-    res.sendStatus(200);
+    try {
+        bot.processUpdate(req.body);
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Webhook processing error:', error);
+        res.sendStatus(200); // Telegram'ga muvaffaqiyatli qabul qilindi deb bildirish, lekin xatolikni log qilish
+    }
 });
-
 app.use(cors({
   origin: '*',  // Barcha origin'larni ruxsat berish (test uchun)
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

@@ -530,7 +530,9 @@ bot.on('callback_query', async (query) => {
 
 // ===== ADMIN COMMANDS =====
 bot.onText(/\/panel|\/admin/, async (msg) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const totalUsers = await User.countDocuments();
   const premiumUsers = await User.countDocuments({ isPremium: true });
@@ -542,7 +544,9 @@ bot.onText(/\/panel|\/admin/, async (msg) => {
 });
 
 bot.onText(/\/users/, async (msg) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const users = await User.find().sort({ totalScore: -1 }).limit(30);
   if (users.length === 0) {
@@ -561,7 +565,9 @@ bot.onText(/\/users/, async (msg) => {
 });
 
 bot.onText(/\/pending/, async (msg) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const pending = await Payment.find({ status: 'pending' });
   if (pending.length === 0) {
@@ -583,7 +589,9 @@ bot.onText(/\/pending/, async (msg) => {
 });
 
 bot.onText(/\/bonus (.+)/, async (msg, match) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const parts = match[1].split(' ');
   if (parts.length !== 2) {
@@ -617,7 +625,9 @@ bot.onText(/\/bonus (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/setrank (.+)/, async (msg, match) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const parts = match[1].split(' ');
   if (parts.length !== 2) {
@@ -652,7 +662,9 @@ bot.onText(/\/setrank (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/setpremium (.+)/, async (msg, match) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const uid = match[1].trim();
   const u = await User.findOne({ id: uid });
@@ -674,7 +686,9 @@ bot.onText(/\/setpremium (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/search (.+)/, async (msg, match) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const query = match[1].toLowerCase();
   const results = await User.find({ name: { $regex: query, $options: 'i' } }).limit(10);
@@ -695,7 +709,9 @@ bot.onText(/\/search (.+)/, async (msg, match) => {
 });
 
 bot.onText(/\/user (.+)/, async (msg, match) => {
-  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
   const uid = match[1].trim();
   const u = await User.findOne({ id: uid });
@@ -763,7 +779,9 @@ bot.onText(/\/disadmin (.+)/, async (msg, match) => {
 
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('adm_')) {
-    if (query.from.id.toString() !== process.env.ADMIN_ID) return;
+      const uid = msg.from.id.toString();
+      const u = await User.findOne({ id: uid });
+      if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
     const parts = query.data.split('_');
     const action = parts[1];
@@ -833,7 +851,8 @@ bot.onText(/\/broadcast/, async (msg) => {
 app.post('/api/approve-payment', async (req, res) => {
     try {
         const { paymentId, adminId } = req.body;
-        if (adminId !== process.env.ADMIN_ID) return res.status(403).json({ error: 'Not admin' });
+        const adminUser = await User.findOne({ id: adminId });
+        if (adminId !== process.env.ADMIN_ID && (!adminUser || !adminUser.isAdmin)) return res.status(403).json({ error: 'Not admin' });
         const payment = await Payment.findOne({ id: paymentId });
         if (!payment) return res.status(404).json({ error: 'Payment not found' });
         payment.status = 'approved';
@@ -852,7 +871,8 @@ app.post('/api/approve-payment', async (req, res) => {
 app.post('/api/reject-payment', async (req, res) => {
     try {
         const { paymentId, adminId } = req.body;
-        if (adminId !== process.env.ADMIN_ID) return res.status(403).json({ error: 'Not admin' });
+        const adminUser = await User.findOne({ id: adminId });
+        if (adminId !== process.env.ADMIN_ID && (!adminUser || !adminUser.isAdmin)) return res.status(403).json({ error: 'Not admin' });
         const payment = await Payment.findOne({ id: paymentId });
         if (!payment) return res.status(404).json({ error: 'Payment not found' });
         payment.status = 'rejected';

@@ -351,40 +351,41 @@ bot.on('web_app_data', async (msg) => {
       awaitingPhoto[uid] = { type: 'premium', price: 5000, product: 'Premium obuna' };
       await bot.sendMessage(uid, `💳 PREMIUM OBUNA\n\n💰 Narxi: 5,000 so'm\n\n✨ Premium imkoniyatlar:\n├ 2x ball\n├ 5 ta jon\n└ Maxsus avatarlar\n\n💳 Karta raqami:\n9860 0801 5954 3810\n\n📸 To'lov qilib, chek rasmini yuboring:`);
     } else if (action === 'submit_payment') {
-      const paymentData = data.payment;
-      const payId = paymentData.id;
-      const payment = new Payment(paymentData);
-      await payment.save();
+  const paymentData = data.payment;
+  const payId = paymentData.id;
+  const payment = new Payment(paymentData);
+  await payment.save();
 
-      const mk = {
-        inline_keyboard: [
-          [{ text: "✅ Tasdiqlash", callback_data: `ap_${payId}` }],
-          [{ text: "❌ Rad etish", callback_data: `rj_${payId}` }]
-        ]
-      };
+  const mk = {
+    inline_keyboard: [
+      [{ text: "✅ Tasdiqlash", callback_data: `ap_${payId}` }],
+      [{ text: "❌ Rad etish", callback_data: `rj_${payId}` }]
+    ]
+  };
 
-      await bot.sendMessage(process.env.ADMIN_ID, `💳 YANGI TO'LOV SO'ROVI (Mini App dan)\n\n👤 Foydalanuvchi: ${paymentData.userName}\n🆔 ID: ${paymentData.userId}\n📦 Mahsulot: ${paymentData.product}\n💰 Summa: ${paymentData.amount}\n📅 Sana: ${paymentData.date}`);
+  await bot.sendMessage(process.env.ADMIN_ID, `💳 YANGI TO'LOV SO'ROVI (Mini App dan)\n\n👤 Foydalanuvchi: ${paymentData.userName}\n🆔 ID: ${paymentData.userId}\n📦 Mahsulot: ${paymentData.product}\n💰 Summa: ${paymentData.amount}\n📅 Sana: ${paymentData.date}`);
 
-      if (paymentData.screenshot) {
-        try {
-          const screenshot = paymentData.screenshot;
-          const header = screenshot.split(',')[0];
-          const mimeType = header.split(':')[1].split(';')[0];
-          const ext = mimeType.split('/')[1];
-          const imageData = screenshot.split(',')[1];
-          const tempPath = base64Img.imgSync(`data:${mimeType};base64,${imageData}`, 'uploads', `temp_${Date.now()}`);
-          await bot.sendPhoto(process.env.ADMIN_ID, tempPath, { caption: `📸 Chek - ${paymentData.userName}`, reply_markup: mk });
-          require('fs').unlinkSync(tempPath);
-        } catch (e) {
-          console.log('Screenshot error:', e.message);
-          await bot.sendMessage(process.env.ADMIN_ID, `❌ Chekni yuklashda xatolik: ${e.message}`, { reply_markup: mk });
-        }
-      } else {
-        await bot.sendMessage(process.env.ADMIN_ID, "📸 Chek yo'q", { reply_markup: mk });
-      }
-
-      await bot.sendMessage(uid, "✅ So'rov yuborildi! Admin tekshirmoqda...");
+  if (paymentData.screenshot) {
+    try {
+      const screenshot = paymentData.screenshot;
+      const header = screenshot.split(',')[0];
+      const mimeType = header.split(':')[1].split(';')[0];
+      const ext = mimeType.split('/')[1];
+      const imageData = screenshot.split(',')[1];
+      const tempPath = base64Img.imgSync(`data:${mimeType};base64,${imageData}`, 'uploads', `temp_${Date.now()}`);
+      await bot.sendPhoto(process.env.ADMIN_ID, tempPath, { caption: `📸 Chek - ${paymentData.userName}`, reply_markup: mk });
+      require('fs').unlinkSync(tempPath);
+    } catch (e) {
+      console.log('Screenshot error:', e.message);
+      await bot.sendMessage(process.env.ADMIN_ID, `❌ Chekni yuklashda xatolik: ${e.message}`, { reply_markup: mk });
     }
+  } else {
+    await bot.sendMessage(process.env.ADMIN_ID, "📸 Chek yo'q", { reply_markup: mk });
+  }
+
+  await bot.sendMessage(uid, "✅ So'rov yuborildi! Admin tekshirmoqda...");
+}
+
   } catch (e) {
     console.log('WebApp error:', e.message);
   }

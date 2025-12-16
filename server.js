@@ -599,26 +599,26 @@ bot.onText(/\/bonus (.+)/, async (msg, match) => {
     return;
   }
 
-  const uid = parts[0];
+  const targetUid = parts[0];
   const amount = parseInt(parts[1]);
   if (isNaN(amount)) {
     await bot.sendMessage(msg.chat.id, "❗ Ball son bo'lishi kerak!");
     return;
   }
 
-  const u = await User.findOne({ id: uid });
-  if (!u) {
+  const targetUser = await User.findOne({ id: targetUid });
+  if (!targetUser) {
     await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
     return;
   }
 
-  u.totalScore += amount;
-  await u.save();
+  targetUser.totalScore += amount;
+  await targetUser.save();
 
-  await bot.sendMessage(msg.chat.id, `✅ ${u.name} ga +${amount} ball berildi!\n🏆 Yangi ball: ${u.totalScore}`);
+  await bot.sendMessage(msg.chat.id, `✅ ${targetUser.name} ga +${amount} ball berildi!\n🏆 Yangi ball: ${targetUser.totalScore}`);
 
   try {
-    await bot.sendMessage(uid, `🎁 Admin sizga +${amount} ball berdi!\n\n🏆 Yangi ball: ${u.totalScore}`);
+    await bot.sendMessage(uid, `🎁 Admin sizga +${amount} ball berdi!\n\n🏆 Yangi ball: ${targetUser.totalScore}`);
   } catch (e) {
     console.log('Bonus message error:', e.message);
   }
@@ -635,27 +635,27 @@ bot.onText(/\/setrank (.+)/, async (msg, match) => {
     return;
   }
 
-  const uid = parts[0];
+  const targetUid = parts[0];
   const rank = parts[1].toLowerCase();
   if (!RANKS[rank]) {
     await bot.sendMessage(msg.chat.id, "❌ Noto'g'ri daraja!");
     return;
   }
 
-  const u = await User.findOne({ id: uid });
-  if (!u) {
+  const targetUser = await User.findOne({ id: targetUid });
+  if (!targetUser) {
     await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
     return;
   }
 
-  u.rank = rank;
-  await u.save();
+  targetUser.rank = rank;
+  await targetUser.save();
 
   const r = RANKS[rank];
-  await bot.sendMessage(msg.chat.id, `✅ ${u.name} ga ${r.icon} ${r.name} berildi!`);
+  await bot.sendMessage(msg.chat.id, `✅ ${targetUser.name} ga ${r.icon} ${r.name} berildi!`);
 
   try {
-    await bot.sendMessage(uid, `🎉 Admin sizga ${r.icon} ${r.name} darajasi berdi!`);
+    await bot.sendMessage(targetUid, `🎉 Admin sizga ${r.icon} ${r.name} darajasi berdi!`);
   } catch (e) {
     console.log('Setrank message error:', e.message);
   }
@@ -666,20 +666,20 @@ bot.onText(/\/setpremium (.+)/, async (msg, match) => {
   const u = await User.findOne({ id: uid });
   if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
-  const uid = match[1].trim();
-  const u = await User.findOne({ id: uid });
-  if (!u) {
+  const targetUid = match[1].trim();  
+  const targetUser = await User.findOne({ id: targetUid });
+  if (!targetUser) {
     await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
     return;
   }
 
-  u.isPremium = true;
-  await u.save();
+  targetUser.isPremium = true;
+  await targetUser.save();
 
-  await bot.sendMessage(msg.chat.id, `✅ ${u.name} ga Premium berildi!`);
+  await bot.sendMessage(msg.chat.id, `✅ ${targetUser.name} ga Premium berildi!`);
 
   try {
-    await bot.sendMessage(uid, "🎉 Admin sizga Premium obuna berdi!\n\n✨ Endi sizda 2x ball va 5 ta jon!");
+    await bot.sendMessage(targetUid, "🎉 Admin sizga Premium obuna berdi!\n\n✨ Endi sizda 2x ball va 5 ta jon!");
   } catch (e) {
     console.log('Setpremium message error:', e.message);
   }
@@ -713,26 +713,26 @@ bot.onText(/\/user (.+)/, async (msg, match) => {
   const u = await User.findOne({ id: uid });
   if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
-  const uid = match[1].trim();
-  const u = await User.findOne({ id: uid });
-  if (!u) {
+  const targetUid = match[1].trim(); 
+  const targetUser = await User.findOne({ id: targetUid });
+  if (!targetUser) {
     await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
     return;
   }
 
   const r = RANKS[u.rank || 'bronze'];
-  const total = u.correct + u.wrong;
-  const acc = total > 0 ? Math.round(u.correct / total * 100) : 0;
-  const prem = u.isPremium ? 'Ha' : 'Yoq';
+  const total = targetUser.correct + targetUser.wrong;
+  const acc = total > 0 ? Math.round(targetUser.correct / total * 100) : 0;
+  const prem = targetUser.isPremium ? 'Ha' : 'Yoq';
 
   const mk = {
     inline_keyboard: [
-      [{ text: "➕ +1000", callback_data: `adm_bonus_${uid}` }],
-      [{ text: "👑 Premium", callback_data: `adm_prem_${uid}` }]
+      [{ text: "➕ +1000", callback_data: `adm_bonus_${targetUid}` }],
+      [{ text: "👑 Premium", callback_data: `adm_prem_${targetUid}` }]
     ]
   };
 
-  await bot.sendMessage(msg.chat.id, `👤 FOYDALANUVCHI\n\n📛 Ism: ${u.name}\n🆔 ID: ${uid}\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${u.totalScore}\n⭐ Premium: ${prem}\n\n🎮 O'yinlar: ${u.gamesPlayed}\n✅ To'g'ri: ${u.correct}\n❌ Xato: ${u.wrong}\n🎯 Aniqlik: ${acc}%\n\n👥 Referrallar: ${u.referrals.length}\n💰 Ref daromad: ${u.refEarnings}\n📅 Qo'shilgan: ${u.joinDate}`, { reply_markup: mk });
+  await bot.sendMessage(msg.chat.id, `👤 FOYDALANUVCHI\n\n📛 Ism: ${targetUser.name}\n🆔 ID: ${targetUid}\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${targetUser.totalScore}\n⭐ Premium: ${prem}\n\n🎮 O'yinlar: ${targetUser.gamesPlayed}\n✅ To'g'ri: ${targetUser.correct}\n❌ Xato: ${targetUser.wrong}\n🎯 Aniqlik: ${acc}%\n\n👥 Referrallar: ${targetUser.referrals.length}\n💰 Ref daromad: ${targetUser.refEarnings}\n📅 Qo'shilgan: ${targetUser.joinDate}`, { reply_markup: mk });
 });
 bot.onText(/\/setadmin (.+)/, async (msg, match) => {
   if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
@@ -779,35 +779,35 @@ bot.onText(/\/disadmin (.+)/, async (msg, match) => {
 
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('adm_')) {
-      const uid = msg.from.id.toString();
+      const uid = query.from.id.toString();
       const u = await User.findOne({ id: uid });
       if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
 
     const parts = query.data.split('_');
     const action = parts[1];
-    const uid = parts[2];
+    const targetUid = parts[2];
 
-    const u = await User.findOne({ id: uid });
-    if (!u) {
+    const targetUser = await User.findOne({ id: targetUid });
+    if (!targetUser) {
       await bot.answerCallbackQuery(query.id, { text: "❌ Topilmadi!" });
       return;
     }
 
     if (action === 'bonus') {
       u.totalScore += 1000;
-      await u.save();
+      await targetUser.save();
       await bot.answerCallbackQuery(query.id, { text: "✅ +1000 ball berildi!" });
       try {
-        await bot.sendMessage(uid, "🎁 Admin sizga +1,000 ball berdi!");
+        await bot.sendMessage(targetUid, "🎁 Admin sizga +1,000 ball berdi!");
       } catch (e) {
         console.log('Quick bonus message error:', e.message);
       }
     } else if (action === 'prem') {
-      u.isPremium = true;
-      await u.save();
+      targetUser.isPremium = true;
+      await targetUser.save();
       await bot.answerCallbackQuery(query.id, { text: "✅ Premium berildi!" });
       try {
-        await bot.sendMessage(uid, "🎉 Admin sizga Premium berdi!");
+        await bot.sendMessage(targetUid, "🎉 Admin sizga Premium berdi!");
       } catch (e) {
         console.log('Quick prem message error:', e.message);
       }

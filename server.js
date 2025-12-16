@@ -450,33 +450,28 @@ app.post('/api/submit-payment', async (req, res) => {
 });
 
 // ===== ADMIN PAYMENT =====
+
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('ap_') || query.data.startsWith('rj_')) {
     if (query.from.id.toString() !== process.env.ADMIN_ID) {
       await bot.answerCallbackQuery(query.id, { text: "❌ Sizda ruxsat yo'q!" });
       return;
     }
-
     const action = query.data.slice(0, 2);
     const payId = query.data.slice(3);
     const payment = await Payment.findOne({ id: payId });
-
     if (!payment) {
       await bot.answerCallbackQuery(query.id, { text: "❌ To'lov topilmadi!" });
       return;
     }
-
     if (payment.status !== 'pending') {
       await bot.answerCallbackQuery(query.id, { text: "⚠️ Bu to'lov allaqachon ko'rib chiqilgan!" });
       return;
     }
-
     const uid = payment.userId;
     const u = await User.findOne({ id: uid });
-
     if (action === 'ap') {
       payment.status = 'approved';
-
       if (payment.type === 'premium') {
         u.isPremium = true;
         await bot.sendMessage(uid, "🎉 PREMIUM TASDIQLANDI!\n\n✨ Endi sizda:\n├ 2x ball\n├ 5 ta jon\n└ Maxsus avatarlar\n\n🎮 O'yinni qayta boshlang!");
@@ -485,26 +480,44 @@ bot.on('callback_query', async (query) => {
         const r = RANKS[payment.targetRank];
         await bot.sendMessage(uid, `🎉 ${r.name.toUpperCase()} TASDIQLANDI!\n\n${r.icon} Endi sizda:\n├ ${r.mult}x ball multiplikator\n└ ${r.name} darajasi\n\n🎮 O'yinni qayta boshlang!`);
       }
-
-      await u.save();
+            await u.save();
       await payment.save();
-
       await bot.answerCallbackQuery(query.id, { text: "✅ Tasdiqlandi!" });
-      await bot.editMessageCaption(`✅ TASDIQLANDI\n\n👤 ${payment.userName}\n📦 ${payment.product}\n💰 ${payment.amount}`, {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id
-      });
+      // Xabar turini tekshirib, mos funksiyani ishlat
+      const newText = `✅ TASDIQLANDI\n\n👤 ${payment.userName}\n📦 ${payment.product}\n💰 ${payment.amount}`;
+      if (query.message.photo) {
+        // Rasm xabari – caption'ni edit qil
+        await bot.editMessageCaption(newText, {
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id
+        });
+      } else {
+        // Text xabari – text'ni edit qil
+        await bot.editMessageText(newText, {
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id
+        });
+      }
     } else {
       payment.status = 'rejected';
       await payment.save();
-
       await bot.sendMessage(uid, "❌ To'lov rad etildi\n\nSabab: Chek tasdiqlanmadi.\nIltimos qayta urinib ko'ring.");
-
       await bot.answerCallbackQuery(query.id, { text: "❌ Rad etildi!" });
-      await bot.editMessageCaption(`❌ RAD ETILDI\n\n👤 ${payment.userName}\n📦 ${payment.product}\n💰 ${payment.amount}`, {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id
-      });
+            // Xabar turini tekshirib, mos funksiyani ishlat
+      const newText = `❌ RAD ETILDI\n\n👤 ${payment.userName}\n📦 ${payment.product}\n💰 ${payment.amount}`;
+      if (query.message.photo) {
+        // Rasm xabari – caption'ni edit qil
+        await bot.editMessageCaption(newText, {
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id
+        });
+      } else {
+        // Text xabari – text'ni edit qil
+        await bot.editMessageText(newText, {
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id
+        });
+      }
     }
   }
 });

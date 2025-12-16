@@ -817,7 +817,12 @@ app.post('/api/reject-payment', async (req, res) => {
 app.get('/api/admin-payments', async (req, res) => {
     try {
         const pending = await Payment.find({ status: 'pending' });
-        res.json(pending);
+        // Screenshot'ni base64 ga aylantirish (agar file_id bo'lsa, uni olish kerak, lekin kodda base64 saqlanadi)
+        const result = pending.map(p => ({
+            ...p.toObject(),
+            screenshot: p.screenshot // Agar base64 bo'lsa, shunday qoldir; agar file_id bo'lsa, uni base64 ga aylantir
+        }));
+        res.json(result);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

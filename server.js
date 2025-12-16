@@ -152,7 +152,7 @@ let url = process.env.MINI_APP_URL;
 }
 
 // ===== START =====
-(/\/start/, async (msg) => {
+bot.onText(/\/start/, async (msg) => {
   const uid = msg.from.id;
   const name = msg.from.first_name;
 

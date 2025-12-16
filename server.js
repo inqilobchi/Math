@@ -13,11 +13,7 @@ const port = process.env.PORT || 3000;
 const bot = new TelegramBot(process.env.BOT_TOKEN);
 
 const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
-// Webhook o‘rnatish
-// Kodning boshida, setWebHook'dan oldin
-bot.deleteWebhook().then(() => {
-    bot.setWebHook(WEBHOOK_URL);
-});
+
 bot.setWebHook(WEBHOOK_URL);
 // Middleware'larni webhook route'dan OLDIN joylashtiring
 app.use(express.json());  // Bu yerda, webhook route'dan oldin!

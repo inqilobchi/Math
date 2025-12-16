@@ -17,7 +17,7 @@ const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
 
 bot.setWebHook(WEBHOOK_URL);
 // Middleware'larni webhook route'dan OLDIN joylashtiring
-app.use(express.json());  // Bu yerda, webhook route'dan oldin!
+app.use(express.json({ limit: '10mb' }));  // Limitni 10MB ga oshirish
 app.use(cors({
   origin: '*',  // Barcha origin'larni ruxsat berish (test uchun)
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

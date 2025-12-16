@@ -152,7 +152,7 @@ let url = process.env.MINI_APP_URL;
 }
 
 // ===== START =====
-bot.onText(/\/start/, async (msg) => {
+(/\/start/, async (msg) => {
   const uid = msg.from.id;
   const name = msg.from.first_name;
 
@@ -533,7 +533,7 @@ bot.onText(/\/panel|\/admin/, async (msg) => {
   const totalGames = await User.aggregate([{ $group: { _id: null, total: { $sum: '$gamesPlayed' } } }]);
   const pending = await Payment.countDocuments({ status: 'pending' });
 
-  await bot.sendMessage(msg.chat.id, `👑 ADMIN PANEL\n\n📊 Statistika:\n├ Foydalanuvchilar: ${totalUsers}\n├ Premium: ${premiumUsers}\n├ Jami o'yinlar: ${totalGames[0]?.total || 0}\n├ Jami ball: ${totalScore[0]?.total || 0}\n└ Kutilayotgan to'lovlar: ${pending}\n\n📝 Buyruqlar:\n/users - Foydalanuvchilar\n/pending - Kutilayotgan to'lovlar\n/broadcast - Xabar yuborish\n/bonus [id] [ball] - Ball berish\n/setrank [id] [rank] - Daraja\n/setpremium [id] - Premium\n/search [ism] - Qidirish\n/user [id] - Ma'lumot`);
+  await bot.sendMessage(msg.chat.id, `👑 ADMIN PANEL\n\n📊 Statistika:\n├ Foydalanuvchilar: ${totalUsers}\n├ Premium: ${premiumUsers}\n├ Jami o'yinlar: ${totalGames[0]?.total || 0}\n├ Jami ball: ${totalScore[0]?.total || 0}\n└ Kutilayotgan to'lovlar: ${pending}\n\n📝 Buyruqlar:\n/users - Foydalanuvchilar\n/pending - Kutilayotgan to'lovlar\n/broadcast - Xabar yuborish\n/bonus [id] [ball] - Ball berish\n/setrank [id] [rank] - Daraja\n/setpremium [id] - Premium\n/search [ism] - Qidirish\n/user [id] - Ma'lumot\n/setadmin [id] - Admin qo'shish\n/disadmin [id] - Adminlikdan olish`);
 });
 
 bot.onText(/\/users/, async (msg) => {
@@ -712,6 +712,48 @@ bot.onText(/\/user (.+)/, async (msg, match) => {
   };
 
   await bot.sendMessage(msg.chat.id, `👤 FOYDALANUVCHI\n\n📛 Ism: ${u.name}\n🆔 ID: ${uid}\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${u.totalScore}\n⭐ Premium: ${prem}\n\n🎮 O'yinlar: ${u.gamesPlayed}\n✅ To'g'ri: ${u.correct}\n❌ Xato: ${u.wrong}\n🎯 Aniqlik: ${acc}%\n\n👥 Referrallar: ${u.referrals.length}\n💰 Ref daromad: ${u.refEarnings}\n📅 Qo'shilgan: ${u.joinDate}`, { reply_markup: mk });
+});
+bot.onText(/\/setadmin (.+)/, async (msg, match) => {
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+
+  const uid = match[1].trim();
+  const u = await User.findOne({ id: uid });
+  if (!u) {
+    await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
+    return;
+  }
+
+  u.isAdmin = true;
+  await u.save();
+
+  await bot.sendMessage(msg.chat.id, `✅ ${u.name} ga Admin berildi!`);
+
+  try {
+    await bot.sendMessage(uid, "🎉 Admin sizga Admin huquqlari berdi!");
+  } catch (e) {
+    console.log('Setadmin message error:', e.message);
+  }
+});
+bot.onText(/\/disadmin (.+)/, async (msg, match) => {
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+
+  const uid = match[1].trim();
+  const u = await User.findOne({ id: uid });
+  if (!u) {
+    await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
+    return;
+  }
+
+  u.isAdmin = false;
+  await u.save();
+
+  await bot.sendMessage(msg.chat.id, `✅ ${u.name} adminlikdan olindi!`);
+
+  try {
+    await bot.sendMessage(uid, "❌ Siz adminlikdan olindingiz !");
+  } catch (e) {
+    console.log('Setadmin message error:', e.message);
+  }
 });
 
 bot.on('callback_query', async (query) => {

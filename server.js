@@ -835,6 +835,7 @@ app.post('/api/approve-payment', async (req, res) => {
         const user = await User.findOne({ id: payment.userId });
         if (payment.type === 'premium') user.isPremium = true;
         else if (payment.type === 'rank') user.rank = payment.targetRank;
+        user.pendingRequest = null;  // Qo'shildi
         await user.save();
         await payment.save();
         res.json({ success: true });
@@ -850,12 +851,16 @@ app.post('/api/reject-payment', async (req, res) => {
         const payment = await Payment.findOne({ id: paymentId });
         if (!payment) return res.status(404).json({ error: 'Payment not found' });
         payment.status = 'rejected';
+        const user = await User.findOne({ id: payment.userId });
+        user.pendingRequest = null;  // Qo'shildi
+        await user.save();
         await payment.save();
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
+
 app.get('/api/admin-payments', async (req, res) => {
     try {
         const pending = await Payment.find({ status: 'pending' });

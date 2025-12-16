@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs'); 
 const express = require('express');
 const mongoose = require('mongoose');
 const TelegramBot = require('node-telegram-bot-api');
@@ -347,10 +348,7 @@ bot.on('web_app_data', async (msg) => {
       const price = data.price;
       awaitingPhoto[uid] = { type: 'rank', rank, price, product: `${RANKS[rank].name} daraja` };
       await bot.sendMessage(uid, `💳 ${RANKS[rank].name.toUpperCase()} DARAJA\n\n💰 Narxi: ${price} so'm\n\n💳 Karta raqami:\n9860 0801 5954 3810\n\n📸 To'lov qilib, chek rasmini yuboring:`);
-    } else if (action === 'buy_premium') {
-      awaitingPhoto[uid] = { type: 'premium', price: 5000, product: 'Premium obuna' };
-      await bot.sendMessage(uid, `💳 PREMIUM OBUNA\n\n💰 Narxi: 5,000 so'm\n\n✨ Premium imkoniyatlar:\n├ 2x ball\n├ 5 ta jon\n└ Maxsus avatarlar\n\n💳 Karta raqami:\n9860 0801 5954 3810\n\n📸 To'lov qilib, chek rasmini yuboring:`);
-    } else if (action === 'submit_payment') {
+} else if (action === 'submit_payment') {
   const paymentData = data.payment;
   const payId = paymentData.id;
   const payment = new Payment(paymentData);
@@ -369,11 +367,18 @@ bot.on('web_app_data', async (msg) => {
     try {
       const screenshot = paymentData.screenshot;
       const header = screenshot.split(',')[0];
-      const mimeType = header.split(':')[1].split(';')[0];
-      const imageData = screenshot.split(',')[1];
-      const tempPath = base64Img.imgSync(`data:${mimeType};base64,${imageData}`, 'uploads', `temp_${Date.now()}`);
+      const mimeType = header.split(':')[1].split(';')[0];  // Masalan, 'image/png'
+      const imageData = screenshot.split(',')[1];  // Base64 qism
+      const imageBuffer = Buffer.from(imageData, 'base64');  // Base64'dan Buffer ga aylantirish
+      
+      // Temp fayl yaratish (extension mimeType ga qarab)
+      const ext = mimeType.split('/')[1] || 'png';  // Agar aniqlanmasa, png
+      const tempPath = `uploads/temp_${Date.now()}.${ext}`;
+      fs.writeFileSync(tempPath, imageBuffer);  // Faylga yozish
+      
       await bot.sendPhoto(process.env.ADMIN_ID, tempPath, { caption: text, reply_markup: mk });
-      require('fs').unlinkSync(tempPath);
+      
+      fs.unlinkSync(tempPath);  // Temp faylni o'chirish
     } catch (e) {
       console.log('Screenshot error:', e.message);
       await bot.sendMessage(process.env.ADMIN_ID, `${text}\n\n❌ Chekni yuklashda xatolik: ${e.message}`, { reply_markup: mk });
@@ -382,8 +387,9 @@ bot.on('web_app_data', async (msg) => {
     await bot.sendMessage(process.env.ADMIN_ID, `${text}\n\n📸 Chek yo'q`, { reply_markup: mk });
   }
 
-  await bot.sendMessage(uid, "✅ So'rov yuborildi! Admin tekshirmoqda...");
+  await bot.sendMessage(uid, "✅ So'rov yuborildi! Admin tekshirmoqda...");  // Agar kerak bo'lmasa, olib tashlang
 }
+
 
   } catch (e) {
     console.log('WebApp error:', e.message);

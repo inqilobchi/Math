@@ -236,7 +236,7 @@ bot.onText(/^🎁 Referral$/, async (msg) => {
   const today = new Date().toISOString().split('T')[0];
   const todayRefs = u.lastRefDate === today ? u.todayRefs : 0;
 
-  await bot.sendMessage(msg.chat.id, `🎁 REFERRAL TIZIMI\n\n🔗 Sizning havolangiz:\n${link}\n\n💰 Bonuslar:\n├ Har bir do'st: +${bonus} ball (darhol)\n└ 24 soatdan keyin: 5% ularning balidan\n\n📊 Statistika:\n├ Jami taklif qilganlar: ${u.referrals.length}\n├ Bugungi referrallar: ${todayRefs}\n└ Jami ishlab olgan: ${u.refEarnings} ball`);
+  await bot.sendMessage(msg.chat.id, `🎁 REFERRAL TIZIMI\n\n🔗 Sizning havolangiz:\n${link}\n\n💰 Bonuslar:\n├ Har bir do'st: +700 ball (darhol)\n└ 24 soatdan keyin: 5% ularning balidan\n\n📊 Statistika:\n├ Jami taklif qilganlar: ${u.referrals.length}\n├ Bugungi referrallar: ${todayRefs}\n└ Jami ishlab olgan: ${u.refEarnings} ball`);
 });
 
 // ===== STATS =====

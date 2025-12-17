@@ -44,10 +44,10 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const RANKS = {
-  bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 15000, mult: 1, ref: 50 },
-  silver: { name: 'Silver', icon: '🥈', min: 15000, max: 30000, mult: 1.2, ref: 75 },
-  gold: { name: 'Gold', icon: '🥇', min: 30000, max: 45000, mult: 1.5, ref: 100 },
-  pro: { name: 'Pro', icon: '💎', min: 45000, max: 999999, mult: 2, ref: 150 }
+  bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 15000, mult: 1, ref: 700 },
+  silver: { name: 'Silver', icon: '🥈', min: 15000, max: 30000, mult: 1.2, ref: 700 },
+  gold: { name: 'Gold', icon: '🥇', min: 30000, max: 45000, mult: 1.5, ref: 700 },
+  pro: { name: 'Pro', icon: '💎', min: 45000, max: 999999, mult: 2, ref: 700 }
 };
 const RANK_ORDER = ['bronze', 'silver', 'gold', 'pro'];
 app.get('/api/user-data', async (req, res) => {

@@ -231,7 +231,7 @@ bot.onText(/^🎁 Referral$/, async (msg) => {
   const u = await ensureUser(uid, msg.from.first_name);
 
   const bonus = RANKS[u.rank || 'bronze'].ref;
-  const link = `https://t.me/Math673Bot?start=ref${uid}`;
+  const link = `https://t.me/vIBEX2BOT?start=ref${uid}`;
 
   const today = new Date().toISOString().split('T')[0];
   const todayRefs = u.lastRefDate === today ? u.todayRefs : 0;

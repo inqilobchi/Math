@@ -117,12 +117,17 @@ async function checkSub(uid) {
 }
 
 async function ensureUser(uid, name) {
-  let user = await User.findOne({ id: uid });
-  if (!user) {
-    user = new User({ id: uid, name });
-    await user.save();
+  try {
+    let user = await User.findOneAndUpdate(
+      { id: uid },
+      { $setOnInsert: { name, joinDate: new Date() } },  // Faqat yangi bo'lsa qo'sh
+      { upsert: true, new: true }  // Agar mavjud bo'lmasa, yarat; mavjud bo'lsa, qaytar
+    );
+    return user;
+  } catch (e) {
+    console.log('Ensure user error:', e.message);
+    return null;
   }
-  return user;
 }
 
 function mainMenu(subscribed = true, userStats = null) {
@@ -154,7 +159,7 @@ let url = process.env.MINI_APP_URL;
 
 // ===== START =====
 bot.onText(/\/start/, async (msg) => {
-  const uid = msg.from.id;
+  const uid = msg.from.id.toString();
   const name = msg.from.first_name;
 
   let refUid = null;
@@ -214,11 +219,12 @@ bot.onText(/\/start/, async (msg) => {
 // ===== CHECK SUB =====
 bot.on('callback_query', async (query) => {
   if (query.data === 'check_sub') {
-    const subscribed = await checkSub(query.from_user.id);
+    const uid = query.from.id.toString();  // String ga aylantirish
+    const subscribed = await checkSub(uid);
     if (subscribed) {
       await bot.answerCallbackQuery(query.id, { text: "✅ Obuna tasdiqlandi!" });
-      await ensureUser(query.from_user.id, query.from_user.first_name);
-      await bot.sendMessage(query.from_user.id, "✅ Obuna tasdiqlandi!\n\nEndi o'ynashingiz mumkin!", { reply_markup: mainMenu() });
+      await ensureUser(uid, query.from.first_name);
+      await bot.sendMessage(uid, "✅ Obuna tasdiqlandi!\n\nEndi o'ynashingiz mumkin!", { reply_markup: mainMenu() });
     } else {
       await bot.answerCallbackQuery(query.id, { text: "❌ Obuna topilmadi!", show_alert: true });
     }

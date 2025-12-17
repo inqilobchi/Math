@@ -544,7 +544,7 @@ bot.onText(/\/panel|\/admin/, async (msg) => {
   const totalGames = await User.aggregate([{ $group: { _id: null, total: { $sum: '$gamesPlayed' } } }]);
   const pending = await Payment.countDocuments({ status: 'pending' });
 
-  await bot.sendMessage(msg.chat.id, `👑 ADMIN PANEL\n\n📊 Statistika:\n├ Foydalanuvchilar: ${totalUsers}\n├ Premium: ${premiumUsers}\n├ Jami o'yinlar: ${totalGames[0]?.total || 0}\n├ Jami ball: ${totalScore[0]?.total || 0}\n└ Kutilayotgan to'lovlar: ${pending}\n\n📝 Buyruqlar:\n/users - Foydalanuvchilar\n/pending - Kutilayotgan to'lovlar\n/broadcast - Xabar yuborish\n/bonus [id] [ball] - Ball berish\n/setrank [id] [rank] - Daraja\n/setpremium [id] - Premium\n/search [ism] - Qidirish\n/user [id] - Ma'lumot\n/setadmin [id] - Admin qo'shish\n/disadmin [id] - Adminlikdan olish`);
+  await bot.sendMessage(msg.chat.id, `👑 ADMIN PANEL\n\n📊 Statistika:\n├ Foydalanuvchilar: ${totalUsers}\n├ Premium: ${premiumUsers}\n├ Jami o'yinlar: ${totalGames[0]?.total || 0}\n├ Jami ball: ${totalScore[0]?.total || 0}\n└ Kutilayotgan to'lovlar: ${pending}\n\n📝 Buyruqlar:\n/users - Foydalanuvchilar\n/pending - Kutilayotgan to'lovlar\n/broadcast - Xabar yuborish\n/bonus [id] [ball] - Ball berish\n/setrank [id] [rank] - Daraja\n/setpremium [id] - Premium\n/search [ism] - Qidirish\n/user [id] - Ma'lumot\n/setadmin [id] - Admin qo'shish\n/disadmin [id] - Adminlikdan olish\n/reset - Haftalik tozalash`);
 });
 
 bot.onText(/\/users/, async (msg) => {
@@ -780,6 +780,27 @@ bot.onText(/\/disadmin (.+)/, async (msg, match) => {
     console.log('Setadmin message error:', e.message);
   }
 });
+// ===== RESET ALL USERS =====
+bot.onText(/^\/reset$/, async (msg) => {
+  if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
+
+  await bot.sendMessage(
+    msg.chat.id,
+    "⚠️ DIQQAT!\n\nBarcha foydalanuvchilarning:\n" +
+    "• Ballari 0 bo‘ladi\n" +
+    "• Darajasi 🥉 Bronze bo‘ladi\n" +
+    "• Premium bekor qilinadi\n\n" +
+    "Tasdiqlaysizmi?",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "✅ HA, RESET", callback_data: "confirm_reset" }],
+          [{ text: "❌ BEKOR", callback_data: "cancel_reset" }]
+        ]
+      }
+    }
+  );
+});
 
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('adm_')) {
@@ -816,6 +837,42 @@ bot.on('callback_query', async (query) => {
         console.log('Quick prem message error:', e.message);
       }
     }
+  }
+  if (query.data === 'confirm_reset') {
+      const uid = query.from.id.toString();
+      const u = await User.findOne({ id: uid });
+      if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
+
+    await User.updateMany(
+      {},
+      {
+        $set: {
+          rank: 'bronze',
+          totalScore: 0,
+          isPremium: false,
+          gamesPlayed: 0,
+          correct: 0,
+          wrong: 0,
+          streak: 0,
+          refEarnings: 0,
+          todayRefs: 0
+        }
+      }
+    );
+
+    await bot.answerCallbackQuery(query.id, { text: "✅ Reset bajarildi!" });
+    await bot.sendMessage(
+      query.message.chat.id,
+      "♻️ BARCHA FOYDALANUVCHILAR RESET QILINDI!\n\n" +
+      "🥉 Daraja: Bronze\n" +
+      "⭐ Ball: 0\n" +
+      "🚫 Premium: O‘chirildi"
+    );
+  }
+
+  if (query.data === 'cancel_reset') {
+    await bot.answerCallbackQuery(query.id, { text: "❌ Bekor qilindi" });
+    await bot.sendMessage(query.message.chat.id, "🚫 Reset bekor qilindi.");
   }
 });
 

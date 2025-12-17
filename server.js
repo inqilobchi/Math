@@ -44,10 +44,10 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const RANKS = {
-  bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 5000, mult: 1, ref: 50 },
-  silver: { name: 'Silver', icon: '🥈', min: 5000, max: 10000, mult: 1.2, ref: 75 },
-  gold: { name: 'Gold', icon: '🥇', min: 10000, max: 15000, mult: 1.5, ref: 100 },
-  pro: { name: 'Pro', icon: '💎', min: 15000, max: 999999, mult: 2, ref: 150 }
+  bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 15000, mult: 1, ref: 50 },
+  silver: { name: 'Silver', icon: '🥈', min: 15000, max: 30000, mult: 1.2, ref: 75 },
+  gold: { name: 'Gold', icon: '🥇', min: 30000, max: 45000, mult: 1.5, ref: 100 },
+  pro: { name: 'Pro', icon: '💎', min: 45000, max: 999999, mult: 2, ref: 150 }
 };
 const RANK_ORDER = ['bronze', 'silver', 'gold', 'pro'];
 app.get('/api/user-data', async (req, res) => {
@@ -93,9 +93,9 @@ app.post('/api/update-stats', async (req, res) => {
   }
 });
 function getRank(score) {
-  if (score >= 15000) return 'pro';
-  if (score >= 10000) return 'gold';
-  if (score >= 5000) return 'silver';
+  if (score >= 45000) return 'pro';
+  if (score >= 30000) return 'gold';
+  if (score >= 15000) return 'silver';
   return 'bronze';
 }
 
@@ -177,7 +177,7 @@ bot.onText(/\/start/, async (msg) => {
         refUser.lastRefDate = today;
       }
       refUser.todayRefs += 1;
-      const bonus = RANKS[refUser.rank || 'bronze'].ref;
+      const bonus = S[refUser.rank || 'bronze'].ref;
       refUser.totalScore += bonus;
       refUser.refEarnings += bonus;
       await refUser.save();
@@ -230,7 +230,7 @@ bot.onText(/^🎁 Referral$/, async (msg) => {
   const u = await ensureUser(uid, msg.from.first_name);
 
   const bonus = RANKS[u.rank || 'bronze'].ref;
-  const link = `https://t.me/${bot.options.username}?start=ref${uid}`;
+  const link = `https://t.me/Math673Bot?start=ref${uid}`;
 
   const today = new Date().toISOString().split('T')[0];
   const todayRefs = u.lastRefDate === today ? u.todayRefs : 0;
@@ -484,6 +484,9 @@ bot.on('callback_query', async (query) => {
       } else if (payment.type === 'rank') {
         u.rank = payment.targetRank;
         const r = RANKS[payment.targetRank];
+          if (u.totalScore < r.min) {
+            u.totalScore = r.min;  
+          }
         await bot.sendMessage(uid, `🎉 ${r.name.toUpperCase()} TASDIQLANDI!\n\n${r.icon} Endi sizda:\n├ ${r.mult}x ball multiplikator\n└ ${r.name} darajasi\n\n🎮 O'yinni qayta boshlang!`);
       }
             await u.save();

@@ -96,7 +96,8 @@ app.post('/api/submit-instagram', async (req, res) => {
     const user = await User.findOne({ id: userId });
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.instagramBonus) return res.status(400).json({ error: 'Already claimed' });
-    
+    const existingPending = await Payment.findOne({ userId, type: 'instagram', status: 'pending' });
+    if (existingPending) return res.status(400).json({ error: 'Already submitted, waiting for approval' });
     const payment = new Payment({
       id: 'ig_' + Date.now(),
       userId,
@@ -905,7 +906,9 @@ bot.on('callback_query', async (query) => {
           wrong: 0,
           streak: 0,
           refEarnings: 0,
-          todayRefs: 0
+          todayRefs: 0,
+          referrals: [],  
+          instagramBonus: false 
         }
       }
     );

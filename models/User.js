@@ -23,7 +23,8 @@ const userSchema = new mongoose.Schema({
   isPremium: { type: Boolean, default: false },
   pendingRequest: { type: String },
   isAdmin: { type: Boolean, default: false },
-  joinDate: { type: Date, default: Date.now }
+  joinDate: { type: Date, default: Date.now },
+  instagramBonus: { type: Boolean, default: false }  
 });
 
 module.exports = mongoose.model('User', userSchema);

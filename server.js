@@ -90,10 +90,49 @@ app.post('/api/update-stats', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+app.post('/api/submit-instagram', async (req, res) => {
+  try {
+    const { userId, screenshot } = req.body;
+    const user = await User.findOne({ id: userId });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.instagramBonus) return res.status(400).json({ error: 'Already claimed' });
+    
+    const payment = new Payment({
+      id: 'ig_' + Date.now(),
+      userId,
+      userName: user.name,
+      userAvatar: user.avatar,
+      userRank: user.rank,
+      type: 'instagram',
+      amount: '20,000 ball',
+      product: 'Instagram Story',
+      screenshot,
+      status: 'pending',
+      date: new Date().toISOString()
+    });
+    await payment.save();
+    
+    // Admin ga yuborish
+    const mk = {
+      inline_keyboard: [
+        [{ text: "✅ Tasdiqlash", callback_data: `ap_${payment.id}` }],
+        [{ text: "❌ Rad etish", callback_data: `rj_${payment.id}` }]
+      ]
+    };
+    await bot.sendMessage(process.env.ADMIN_ID, `📸 Instagram Story so'rovi\n\n👤 ${user.name}\n🆔 ${userId}`);
+    if (screenshot) {
+      const tempPath = base64Img.imgSync(`data:image/png;base64,${screenshot.split(',')[1]}`, 'uploads', `temp_${Date.now()}`);
+      await bot.sendPhoto(process.env.ADMIN_ID, tempPath, { caption: `📸 Instagram - ${user.name}`, reply_markup: mk });
+      require('fs').unlinkSync(tempPath);
+    }
+    
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 function getRank(score) {
-  if (score >= 45000) return 'pro';
-  if (score >= 30000) return 'gold';
-  if (score >= 15000) return 'silver';
+  if (score >= 90000) return 'pro';
   return 'bronze';
 }
 
@@ -290,7 +329,7 @@ bot.onText(/^🏆 Top 10$/, async (msg) => {
 
 // ===== HELP =====
 bot.onText(/^ℹ️ Yordam$/, async (msg) => {
-  await bot.sendMessage(msg.chat.id, `ℹ️ YORDAM\n\n🎮 O'yin qoidalari:\n├ Matematik misollarni yeching\n├ Har bir to'g'ri javob +10 ball\n├ Combo: 3+ ketma-ket +5, 5+ +10\n├ 3 ta xato = o'yin tugadi\n└ 60 soniya vaqt\n\n🏆 Darajalar:\n├ 🥉 Bronze: 0 - 10,000\n├ 🥈 Silver: 10,000 - 20,000 (1.2x)\n├ 🥇 Gold: 20,000 - 30,000 (1.5x)\n└ 💎 Pro: 30,000+ (2x)\n\n🎁 Referral:\n├ Har bir do'st +700 ball\n└ 24 soatdan keyin 5% bonus`);
+  await bot.sendMessage(msg.chat.id, `ℹ️ YORDAM\n\n🎮 O'yin qoidalari:\n├ Matematik misollarni yeching\n├ Har bir to'g'ri javob +10 ball\n├ Combo: 3+ ketma-ket +5, 5+ +10\n├ 3 ta xato = o'yin tugadi\n└ 60 soniya vaqt\n\n🏆 Darajalar:\n├ 🥉 Bronze: 0 - 90,000\n└ 💎 Pro: 90,000+\n\n🎁 Referral:\n├ Har bir do'st +3000 ball\n└ 24 soatdan keyin 5% bonus`);
 });
 
 // ===== WEB APP DATA =====
@@ -483,6 +522,13 @@ bot.on('callback_query', async (query) => {
     const u = await User.findOne({ id: uid });
     if (action === 'ap') {
       payment.status = 'approved';
+      if (payment.type === 'instagram') {
+        const user = await User.findOne({ id: payment.userId });
+        user.totalScore += 20000;
+        user.instagramBonus = true;
+        await user.save();
+        await bot.sendMessage(payment.userId, "🎉 Instagram Story tasdiqlandi!\n\n💰 +20,000 ball berildi!");
+      }
       if (payment.type === 'premium') {
         u.isPremium = true;
         await bot.sendMessage(uid, "🎉 PREMIUM TASDIQLANDI!\n\n✨ Endi sizda:\n├ 2x ball\n├ 5 ta jon\n└ Maxsus avatarlar\n\n🎮 O'yinni qayta boshlang!");

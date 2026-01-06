@@ -91,6 +91,10 @@ app.post('/api/update-stats', async (req, res) => {
   }
 });
 app.post('/api/submit-instagram', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
   try {
     const { userId, screenshot } = req.body;
     const user = await User.findOne({ id: userId });
@@ -476,6 +480,10 @@ bot.on('photo', async (msg) => {
 
 });  //
 app.post('/api/submit-payment', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');  
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
     try {
         const { payment } = req.body;
         const pay = new Payment(payment);

@@ -24,7 +24,10 @@ const userSchema = new mongoose.Schema({
   pendingRequest: { type: String },
   isAdmin: { type: Boolean, default: false },
   joinDate: { type: Date, default: Date.now },
-  instagramBonus: { type: Boolean, default: false }  
+  instagramBonus: { type: Boolean, default: false },
+  referredBy: { type: String, default: null },  
+  lastRefDate: { type: String, default: null },  
+  todayRefs: { type: Number, default: 0 },  
 });
 
 module.exports = mongoose.model('User', userSchema);

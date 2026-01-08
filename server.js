@@ -225,7 +225,7 @@ bot.onText(/\/start/, async (msg) => {
       }
       refUser.todayRefs += 1;
       // Referral bonus berishda (start komandasi)
-      const bonus = RANKS[refUser.rank || 'bronze'].ref;  // Bu endi 700 ball beradi
+      const bonus = RANKS[refUser.rank || 'bronze'].refBonus;  // Bu endi 700 ball beradi
       refUser.totalScore += bonus;
       refUser.refEarnings += bonus;
       await refUser.save();
@@ -278,13 +278,13 @@ bot.onText(/^🎁 Referral$/, async (msg) => {
   const uid = msg.from.id.toString();
   const u = await ensureUser(uid, msg.from.first_name);
 
-  const bonus = RANKS[u.rank || 'bronze'].ref;
+  const bonus = RANKS[u.rank || 'bronze'].refBonus;
   const link = `https://t.me/vIBEX2BOT?start=ref${uid}`;
 
   const today = new Date().toISOString().split('T')[0];
   const todayRefs = u.lastRefDate === today ? u.todayRefs : 0;
 
-  await bot.sendMessage(msg.chat.id, `🎁 REFERRAL TIZIMI\n\n🔗 Sizning havolangiz:\n${link}\n\n💰 Bonuslar:\n├ Har bir do'st: +700 ball (darhol)\n└ 24 soatdan keyin: 5% ularning balidan\n\n📊 Statistika:\n├ Jami taklif qilganlar: ${u.referrals.length}\n├ Bugungi referrallar: ${todayRefs}\n└ Jami ishlab olgan: ${u.refEarnings} ball`);
+  await bot.sendMessage(msg.chat.id, `🎁 REFERRAL TIZIMI\n\n🔗 Sizning havolangiz:\n${link}\n\n💰 Bonuslar:\n├ Har bir do'st: +3000 ball (darhol)\n└ 24 soatdan keyin: 5% ularning balidan\n\n📊 Statistika:\n├ Jami taklif qilganlar: ${u.referrals.length}\n├ Bugungi referrallar: ${todayRefs}\n└ Jami ishlab olgan: ${u.refEarnings} ball`);
 });
 
 // ===== STATS =====

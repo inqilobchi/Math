@@ -603,7 +603,7 @@ bot.onText(/\/panel|\/admin/, async (msg) => {
   const totalGames = await User.aggregate([{ $group: { _id: null, total: { $sum: '$gamesPlayed' } } }]);
   const pending = await Payment.countDocuments({ status: 'pending' });
 
-  await bot.sendMessage(msg.chat.id, `👑 ADMIN PANEL\n\n📊 Statistika:\n├ Foydalanuvchilar: ${totalUsers}\n├ Premium: ${premiumUsers}\n├ Jami o'yinlar: ${totalGames[0]?.total || 0}\n├ Jami ball: ${totalScore[0]?.total || 0}\n└ Kutilayotgan to'lovlar: ${pending}\n\n📝 Buyruqlar:\n/users - Foydalanuvchilar\n/pending - Kutilayotgan to'lovlar\n/broadcast - Xabar yuborish\n/bonus [id] [ball] - Ball berish\n/setrank [id] [rank] - Daraja\n/setpremium [id] - Premium\n/search [ism] - Qidirish\n/user [id] - Ma'lumot\n/setadmin [id] - Admin qo'shish\n/disadmin [id] - Adminlikdan olish\n/reset - Haftalik tozalash`);
+  await bot.sendMessage(msg.chat.id, `👑 ADMIN PANEL\n\n📊 Statistika:\n├ Foydalanuvchilar: ${totalUsers}\n├ Premium: ${premiumUsers}\n├ Jami o'yinlar: ${totalGames[0]?.total || 0}\n├ Jami ball: ${totalScore[0]?.total || 0}\n└ Kutilayotgan to'lovlar: ${pending}\n\n📝 Buyruqlar:\n/users - Foydalanuvchilar\n/pending - Kutilayotgan to'lovlar\n/broadcast - Xabar yuborish\n/bonus [id] [ball] - Ball berish\n/setrank [id] [rank] - Daraja\n/setpremium [id] - Premium\n/search [ism] - Qidirish\n/user [id] - Ma'lumot\n/setadmin [id] - Admin qo'shish\n/disadmin [id] - Adminlikdan olish\n/reset - Haftalik tozalash\n/user_res [id] - Foydalanuvchini 0 qilish`);
 });
 
 bot.onText(/\/users/, async (msg) => {
@@ -648,6 +648,38 @@ bot.onText(/\/pending/, async (msg) => {
 
     await bot.sendMessage(msg.chat.id, `⏳ Kutilayotgan to'lov\n\n👤 ${p.userName}\n🆔 ${p.userId}\n📦 ${p.product}\n💰 ${p.amount}\n📅 ${p.date}`);
     await bot.sendPhoto(msg.chat.id, p.screenshot, { reply_markup: mk });
+  }
+});
+
+bot.onText(/\/user_res (.+)/, async (msg, match) => {
+  const uid = msg.from.id.toString();
+  const u = await User.findOne({ id: uid });
+  if (uid !== process.env.ADMIN_ID && (!u || !u.isAdmin)) return;
+
+  const targetUid = match[1].trim();
+  const targetUser = await User.findOne({ id: targetUid });
+  if (!targetUser) {
+    await bot.sendMessage(msg.chat.id, "❌ Foydalanuvchi topilmadi!");
+    return;
+  }
+
+  targetUser.rank = 'bronze';
+  targetUser.totalScore = 0;
+  targetUser.gamesPlayed = 0;
+  targetUser.correct = 0;
+  targetUser.wrong = 0;
+  targetUser.streak = 0;
+  targetUser.refEarnings = 0;
+  targetUser.todayRefs = 0;
+  targetUser.referrals = [];
+  await targetUser.save();
+
+  await bot.sendMessage(msg.chat.id, `✅ ${targetUser.name} reset qilindi!\n\n🥉 Daraja: Bronze\n⭐ Ball: 0`);
+
+  try {
+    await bot.sendMessage(targetUid, "⚠️ Admin sizning hisobingizni reset qildi!\n\n🥉 Daraja: Bronze\n⭐ Ball: 0");
+  } catch (e) {
+    console.log('User reset message error:', e.message);
   }
 });
 

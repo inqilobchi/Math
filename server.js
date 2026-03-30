@@ -252,7 +252,7 @@ bot.onText(/\/start/, async (msg) => {
   const userStats = u.toObject();
   const r = RANKS[u.rank || 'bronze'];
   try {
-    await bot.sendMessage(uid, `👋 Salom, ${name}!\n\n🧮 VibeX Matematik o'yiniga xush kelibsiz!\n\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${u.totalScore}\n🎮 O'yinlar: ${u.gamesPlayed}\n\n🎮 O'ynash uchun pastdagi tugmani bosing!`, { reply_markup: mainMenu(true, userStats) });
+    await bot.sendMessage(uid, `👋 Salom, ${name}!\n\n🧮 TezHisob matematik o'yiniga xush kelibsiz!\n\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${u.totalScore}\n🎮 O'yinlar: ${u.gamesPlayed}\n\n🎮 O'ynash uchun pastdagi tugmani bosing!`, { reply_markup: mainMenu(true, userStats) });
   } catch (e) {
     console.log('Start message error:', e.message);
   }
@@ -279,7 +279,7 @@ bot.onText(/^🎁 Referral$/, async (msg) => {
   const u = await ensureUser(uid, msg.from.first_name);
 
   const bonus = RANKS[u.rank || 'bronze'].refBonus;
-  const link = `https://t.me/vIBEX2BOT?start=ref${uid}`;
+  const link = `https://t.me/TezHisob_bot?start=ref${uid}`;
 
   const today = new Date().toISOString().split('T')[0];
   const todayRefs = u.lastRefDate === today ? u.todayRefs : 0;
@@ -1058,7 +1058,7 @@ const loadData = async () => {
   const userCount = await User.countDocuments();
   const paymentCount = await Payment.countDocuments();
   console.log('='.repeat(50));
-  console.log('✅ VibeX Bot ishga tushdi!');
+  console.log('✅ Tez Hisob Bot ishga tushdi!');
   console.log(`👥 Foydalanuvchilar: ${userCount}`);
   console.log(`💳 To'lovlar: ${paymentCount}`);
   console.log('='.repeat(50));

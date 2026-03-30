@@ -296,16 +296,15 @@ bot.onText(/^📊 Statistika$/, async (msg) => {
   const total = u.correct + u.wrong;
   const acc = total > 0 ? Math.round(u.correct / total * 100) : 0;
 
-  const ri = RANK_ORDER.indexOf(u.rank || 'bronze');
-  let progress = '';
-  if (ri < 3) {
-    const nextRank = RANK_ORDER[ri + 1];
-    const nextR = RANKS[nextRank];
-    progress = `\n📈 ${nextR.name} gacha: ${nextR.min - u.totalScore} ball`;
-  } else {
-    progress = '\n👑 Siz eng yuqori darajada!';
-  }
-
+const ri = RANK_ORDER.indexOf(u.rank || 'bronze');
+let progress = '';
+if (ri < RANK_ORDER.length - 1) {  
+  const nextRank = RANK_ORDER[ri + 1];
+  const nextR = RANKS[nextRank];
+  progress = `\n📈 ${nextR.name} gacha: ${nextR.min - u.totalScore} ball`;
+} else {
+  progress = '\n👑 Siz eng yuqori darajada!';
+}
   const premText = u.isPremium ? 'Ha' : 'Yoq';
 
   await bot.sendMessage(msg.chat.id, `📊 SIZNING STATISTIKANGIZ\n\n👤 Ism: ${u.name}\n${r.icon} Daraja: ${r.name}\n⭐ Jami ball: ${u.totalScore}\n⭐ Premium: ${premText}${progress}\n\n🎮 O'yin statistikasi:\n├ O'yinlar: ${u.gamesPlayed}\n├ To'g'ri: ${u.correct}\n├ Xato: ${u.wrong}\n└ Aniqlik: ${acc}%\n\n👥 Referral:\n├ Taklif qilganlar: ${u.referrals.length}\n└ Ref daromad: ${u.refEarnings} ball`);

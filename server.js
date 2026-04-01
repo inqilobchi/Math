@@ -9,6 +9,32 @@ const crypto = require('crypto');
 const cors = require('cors');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
+
+const connectDB = async () => {
+  try {
+    console.log('🔄 MongoDB ga ulanish...');
+    
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
+      socketTimeoutMS: 45000,
+      family: 4,
+    });
+    
+    console.log('✅ MongoDB ga muvaffaqiyatli ulandi!');
+    await loadData();
+    
+  } catch (error) {
+    console.error('❌ MongoDB ulanish xatosi:', error.message);
+    setTimeout(connectDB, 5000);
+  }
+};
+
+// ✅ Faqat ulanishdan keyin server ishga tushsin
+connectDB();
+
 const app = express();
 const port = process.env.PORT || 3000;
 const bot = new TelegramBot(process.env.BOT_TOKEN);
@@ -40,29 +66,6 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
         res.sendStatus(200); // Telegram'ga muvaffaqiyatli qabul qilindi deb bildirish
     }
 });
-const connectDB = async () => {
-  try {
-    console.log('🔄 MongoDB ga ulanish...');
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      bufferMaxEntries: 0,
-      maxPoolSize: 10,
-    });
-    
-    console.log('✅ MongoDB ga muvaffaqiyatli ulandi!');
-    await loadData();
-    
-  } catch (error) {
-    console.error('❌ MongoDB ulanish xatosi:', error.message);
-    setTimeout(connectDB, 5000); // 5s dan keyin qayta urinish
-  }
-};
-
-// Server middleware'lardan OLDIN ishga tushiring
-connectDB();
 
 const RANKS = {
   bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 90000, mult: 1, refBonus: 3000, price: 0, priceText: 'Bepul' },

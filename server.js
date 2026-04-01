@@ -40,8 +40,29 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
         res.sendStatus(200); // Telegram'ga muvaffaqiyatli qabul qilindi deb bildirish
     }
 });
-// Qolgan kod o'zgarishsiz...
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+const connectDB = async () => {
+  try {
+    console.log('🔄 MongoDB ga ulanish...');
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      bufferMaxEntries: 0,
+      maxPoolSize: 10,
+    });
+    
+    console.log('✅ MongoDB ga muvaffaqiyatli ulandi!');
+    await loadData();
+    
+  } catch (error) {
+    console.error('❌ MongoDB ulanish xatosi:', error.message);
+    setTimeout(connectDB, 5000); // 5s dan keyin qayta urinish
+  }
+};
+
+// Server middleware'lardan OLDIN ishga tushiring
+connectDB();
 
 const RANKS = {
   bronze: { name: 'Bronze', icon: '🥉', min: 0, max: 90000, mult: 1, refBonus: 3000, price: 0, priceText: 'Bepul' },

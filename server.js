@@ -32,7 +32,6 @@ const connectDB = async () => {
   }
 };
 
-// ✅ Faqat ulanishdan keyin server ishga tushsin
 connectDB();
 
 const app = express();
@@ -42,18 +41,15 @@ const bot = new TelegramBot(process.env.BOT_TOKEN);
 const WEBHOOK_URL = `${process.env.RENDER_URL}/bot${process.env.BOT_TOKEN}`;
 
 bot.setWebHook(WEBHOOK_URL);
-// Middleware'larni webhook route'dan OLDIN joylashtiring
-app.use(express.json({ limit: '10mb' }));  // Limitni 10MB ga oshirish
+app.use(express.json({ limit: '10mb' }));  
 app.use(cors({
-  origin: '*',  // Barcha origin'larni ruxsat berish (test uchun)
+  origin: '*',  
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-app.options('*', cors());  // Saqlang
-// Webhook callback route (middleware'lardan keyin)
+app.options('*', cors());  
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
     try {
-        // Test uchun: req.body ni tekshiring (production'da olib tashlang)
         if (!req.body) {
             console.error('req.body is undefined');
             res.sendStatus(200);
@@ -63,7 +59,7 @@ app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
         res.sendStatus(200);
     } catch (error) {
         console.error('Webhook processing error:', error);
-        res.sendStatus(200); // Telegram'ga muvaffaqiyatli qabul qilindi deb bildirish
+        res.sendStatus(200); 
     }
 });
 
@@ -74,7 +70,7 @@ const RANKS = {
 const RANK_ORDER = ['bronze', 'pro'];
 app.get('/api/user-data', async (req, res) => {
   try {
-    const uid = req.query.uid; // 'default' olib tashlandi, majburiy
+    const uid = req.query.uid;
     if (!uid) return res.status(400).json({ error: 'UID required' });
     const user = await User.findOne({ id: uid });
     if (user) {
@@ -141,7 +137,6 @@ app.post('/api/submit-instagram', async (req, res) => {
     });
     await payment.save();
     
-    // Admin ga yuborish
     const mk = {
       inline_keyboard: [
         [{ text: "✅ Tasdiqlash", callback_data: `ap_${payment.id}` }],
@@ -186,8 +181,8 @@ async function ensureUser(uid, name) {
   try {
     let user = await User.findOneAndUpdate(
       { id: uid },
-      { $setOnInsert: { name, joinDate: new Date() } },  // Faqat yangi bo'lsa qo'sh
-      { upsert: true, new: true }  // Agar mavjud bo'lmasa, yarat; mavjud bo'lsa, qaytar
+      { $setOnInsert: { name, joinDate: new Date() } }, 
+      { upsert: true, new: true }  
     );
     return user;
   } catch (e) {
@@ -214,7 +209,7 @@ let url = process.env.MINI_APP_URL;
   }
   const menu = {
     keyboard: [
-      [{ text: "🎮 O'ynash", web_app: { url } }],
+      [{ text: "🎮 O'ynash", web_app: { url }, style: "primary" }],
       ["🎁 Referral", "📊 Statistika"],
       ["🏆 Top 10", "ℹ️ Yordam"]
     ],
@@ -223,7 +218,6 @@ let url = process.env.MINI_APP_URL;
   return menu;
 }
 
-// ===== START =====
 bot.onText(/\/start/, async (msg) => {
   const uid = msg.from.id.toString();
   const name = msg.from.first_name;
@@ -248,14 +242,13 @@ bot.onText(/\/start/, async (msg) => {
         refUser.lastRefDate = today;
       }
       refUser.todayRefs += 1;
-      // Referral bonus berishda (start komandasi)
-      const bonus = RANKS[refUser.rank || 'bronze'].refBonus;  // Bu endi 700 ball beradi
+      const bonus = RANKS[refUser.rank || 'bronze'].refBonus;  
       refUser.totalScore += bonus;
       refUser.refEarnings += bonus;
       await refUser.save();
 
       try {
-        await bot.sendMessage(refUid, `🎉 Yangi referral: ${name}!\n💰 +${bonus} ball darhol berildi!\n📈 24 soatdan keyin uning balidan 5% olasiz!`);
+        await bot.sendMessage(refUid, `<b>🎉 Yangi referral: ${name}!</b>\n<b>💰 +${bonus} ball darhol berildi!</b>\n📈 24 soatdan keyin uning balidan 5% olasiz!`, {parse_mode : "HTML"});
       } catch (e) {
         console.log('Referral message error:', e.message);
       }
@@ -276,16 +269,15 @@ bot.onText(/\/start/, async (msg) => {
   const userStats = u.toObject();
   const r = RANKS[u.rank || 'bronze'];
   try {
-    await bot.sendMessage(uid, `👋 Salom, ${name}!\n\n🧮 TezHisob matematik o'yiniga xush kelibsiz!\n\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${u.totalScore}\n🎮 O'yinlar: ${u.gamesPlayed}\n\n🎮 O'ynash uchun pastdagi tugmani bosing!`, { reply_markup: mainMenu(true, userStats) });
+    await bot.sendMessage(uid, `<b>👋 Salom, ${name}!</b>\n\n<b>🧮 TezHisob matematik o'yiniga xush kelibsiz!</b>\n\n${r.icon} Daraja: ${r.name}\n⭐ Ball: ${u.totalScore}\n🎮 O'yinlar: ${u.gamesPlayed}\n\n<b>🎮 O'ynash uchun pastdagi tugmani bosing!</b>`, { reply_markup: mainMenu(true, userStats), parse_mode : "HTML" });
   } catch (e) {
     console.log('Start message error:', e.message);
   }
 });
 
-// ===== CHECK SUB =====
 bot.on('callback_query', async (query) => {
   if (query.data === 'check_sub') {
-    const uid = query.from.id.toString();  // String ga aylantirish
+    const uid = query.from.id.toString();  
     const subscribed = await checkSub(uid);
     if (subscribed) {
       await bot.answerCallbackQuery(query.id, { text: "✅ Obuna tasdiqlandi!" });
@@ -297,7 +289,6 @@ bot.on('callback_query', async (query) => {
   }
 });
 
-// ===== REFERRAL =====
 bot.onText(/^🎁 Referral$/, async (msg) => {
   const uid = msg.from.id.toString();
   const u = await ensureUser(uid, msg.from.first_name);
@@ -308,10 +299,9 @@ bot.onText(/^🎁 Referral$/, async (msg) => {
   const today = new Date().toISOString().split('T')[0];
   const todayRefs = u.lastRefDate === today ? u.todayRefs : 0;
 
-  await bot.sendMessage(msg.chat.id, `🎁 REFERRAL TIZIMI\n\n🔗 Sizning havolangiz:\n${link}\n\n💰 Bonuslar:\n├ Har bir do'st: +3000 ball (darhol)\n└ 24 soatdan keyin: 5% ularning balidan\n\n📊 Statistika:\n├ Jami taklif qilganlar: ${u.referrals.length}\n├ Bugungi referrallar: ${todayRefs}\n└ Jami ishlab olgan: ${u.refEarnings} ball`);
+  await bot.sendMessage(msg.chat.id, `<b>🎁 REFERRAL TIZIMI:</b>\n\n🔗 Sizning havolangiz:\n${link}\n\n💰 Bonuslar:\n├ Har bir do'st: +3000 ball (darhol)\n└ 24 soatdan keyin: 5% ularning balidan\n\n📊 Statistika:\n├ Jami taklif qilganlar: ${u.referrals.length}\n├ Bugungi referrallar: ${todayRefs}\n└ Jami ishlab olgan: ${u.refEarnings} ball`, {parse_mode : "HTML"});
 });
 
-// ===== STATS =====
 bot.onText(/^📊 Statistika$/, async (msg) => {
   const uid = msg.from.id.toString();
   const u = await ensureUser(uid, msg.from.first_name);
@@ -331,10 +321,9 @@ if (ri < RANK_ORDER.length - 1) {
 }
   const premText = u.isPremium ? 'Ha' : 'Yoq';
 
-  await bot.sendMessage(msg.chat.id, `📊 SIZNING STATISTIKANGIZ\n\n👤 Ism: ${u.name}\n${r.icon} Daraja: ${r.name}\n⭐ Jami ball: ${u.totalScore}\n⭐ Premium: ${premText}${progress}\n\n🎮 O'yin statistikasi:\n├ O'yinlar: ${u.gamesPlayed}\n├ To'g'ri: ${u.correct}\n├ Xato: ${u.wrong}\n└ Aniqlik: ${acc}%\n\n👥 Referral:\n├ Taklif qilganlar: ${u.referrals.length}\n└ Ref daromad: ${u.refEarnings} ball`);
+  await bot.sendMessage(msg.chat.id, `<b>📊 SIZNING STATISTIKANGIZ:</b>\n\n👤 Ism: ${u.name}\n${r.icon} Daraja: ${r.name}\n⭐ Jami ball: ${u.totalScore}\n⭐ Premium: ${premText}${progress}\n\n🎮 O'yin statistikasi:\n├ O'yinlar: ${u.gamesPlayed}\n├ To'g'ri: ${u.correct}\n├ Xato: ${u.wrong}\n└ Aniqlik: ${acc}%\n\n👥 Referral:\n├ Taklif qilganlar: ${u.referrals.length}\n└ Ref daromad: ${u.refEarnings} ball`, {parse_mode : "HTML"});
 });
 
-// ===== TOP 10 =====
 bot.onText(/^🏆 Top 10$/, async (msg) => {
   const users = await User.find().sort({ totalScore: -1 }).limit(10);
   if (users.length === 0) {
@@ -342,7 +331,7 @@ bot.onText(/^🏆 Top 10$/, async (msg) => {
     return;
   }
 
-  let txt = "🏆 TOP 10 O'YINCHILAR\n\n";
+  let txt = "<b>🏆 TOP 10 O'YINCHILAR</b>\n\n";
   const medals = ['🥇', '🥈', '🥉'];
   users.forEach((u, i) => {
     const medal = i < 3 ? medals[i] : `${i + 1}.`;
@@ -352,15 +341,13 @@ bot.onText(/^🏆 Top 10$/, async (msg) => {
     txt += `${medal} ${u.name}${premium}${isMe}\n    ${r.icon} ${u.totalScore} ball\n\n`;
   });
 
-  await bot.sendMessage(msg.chat.id, txt);
+  await bot.sendMessage(msg.chat.id, txt, {parse_mode : "HTML"});
 });
 
-// ===== HELP =====
 bot.onText(/^ℹ️ Yordam$/, async (msg) => {
-  await bot.sendMessage(msg.chat.id, `ℹ️ YORDAM\n\n🎮 O'yin qoidalari:\n├ Matematik misollarni yeching\n├ Har bir to'g'ri javob +10 ball\n├ Combo: 3+ ketma-ket +5, 5+ +10\n├ 3 ta xato = o'yin tugadi\n└ 60 soniya vaqt\n\n🏆 Darajalar:\n├ 🥉 Bronze: 0 - 90,000\n└ 💎 Pro: 90,000+\n\n🎁 Referral:\n├ Har bir do'st +3000 ball\n└ 24 soatdan keyin 5% bonus`);
+  await bot.sendMessage(msg.chat.id, `<b>ℹ️ YORDAM</b>\n\n🎮 O'yin qoidalari:\n├ Matematik misollarni yeching\n├ Har bir to'g'ri javob +10 ball\n├ Combo: 3+ ketma-ket +5, 5+ +10\n├ 3 ta xato = o'yin tugadi\n└ 60 soniya vaqt\n\n🏆 Darajalar:\n├ 🥉 Bronze: 0 - 90,000\n└ 💎 Pro: 90,000+\n\n🎁 Referral:\n├ Har bir do'st +3000 ball\n└ 24 soatdan keyin 5% bonus`, {parse_mode : "HTML"});
 });
 
-// ===== WEB APP DATA =====
 bot.on('web_app_data', async (msg) => {
   const uid = msg.from.id.toString();
   let u = await ensureUser(uid, msg.from.first_name);
@@ -382,7 +369,7 @@ bot.on('web_app_data', async (msg) => {
       if (RANK_ORDER.indexOf(newRank) > RANK_ORDER.indexOf(oldRank)) {
         u.rank = newRank;
         const r = RANKS[newRank];
-        await bot.sendMessage(uid, `🎉 TABRIKLAYMIZ!\n\n${r.icon} ${r.name} darajasiga chiqdingiz!\n✨ Endi ${r.mult}x ball olasiz!`);
+        await bot.sendMessage(uid, `<b>🎉 TABRIKLAYMIZ!</b>\n\n${r.icon} ${r.name} darajasiga chiqdingiz!\n✨ Endi ${r.mult}x ball olasiz!`, {parse_mode : "HTML"});
       }
 
       if (u.referredBy) {
@@ -402,7 +389,7 @@ bot.on('web_app_data', async (msg) => {
       const acc = total > 0 ? Math.round(u.correct / total * 100) : 0;
 
       try {
-        await bot.sendMessage(uid, `🎮 O'YIN TUGADI!\n\n⭐ Ball: +${data.lastGameScore || 0}\n✅ To'g'ri: ${data.correct || 0}\n❌ Xato: ${data.wrong || 0}\n🎯 Aniqlik: ${acc}%\n\n🏆 Jami ball: ${u.totalScore}`);
+        await bot.sendMessage(uid, `<b>🎮 O'YIN TUGADI!</b>\n\n⭐ Ball: +${data.lastGameScore || 0}\n✅ To'g'ri: ${data.correct || 0}\n❌ Xato: ${data.wrong || 0}\n🎯 Aniqlik: ${acc}%\n\n🏆 Jami ball: ${u.totalScore}`, {parse_mode : "HTML"});
       } catch (e) {
         console.log('Game end message error:', e.message);
       }
@@ -419,7 +406,7 @@ bot.on('web_app_data', async (msg) => {
       const rank = data.rank;
       const price = data.price;
       awaitingPhoto[uid] = { type: 'rank', rank, price, product: `${RANKS[rank].name} daraja` };
-      await bot.sendMessage(uid, `💳 ${RANKS[rank].name.toUpperCase()} DARAJA\n\n💰 Narxi: ${price} so'm\n\n💳 Karta raqami:\n9860 0801 5954 3810\n\n📸 To'lov qilib, chek rasmini yuboring:`);
+      await bot.sendMessage(uid, `💳 ${RANKS[rank].name.toUpperCase()} DARAJA\n\n💰 Narxi: ${price} so'm\n\n💳 Karta raqami:\n5614684605929718\n\n📸 To'lov qilib, chek rasmini yuboring:`);
 } else if (action === 'submit_payment') {
   const paymentData = data.payment;
   const payId = paymentData.id;
@@ -439,18 +426,17 @@ bot.on('web_app_data', async (msg) => {
     try {
       const screenshot = paymentData.screenshot;
       const header = screenshot.split(',')[0];
-      const mimeType = header.split(':')[1].split(';')[0];  // Masalan, 'image/png'
-      const imageData = screenshot.split(',')[1];  // Base64 qism
-      const imageBuffer = Buffer.from(imageData, 'base64');  // Base64'dan Buffer ga aylantirish
+      const mimeType = header.split(':')[1].split(';')[0]; 
+      const imageData = screenshot.split(',')[1];  
+      const imageBuffer = Buffer.from(imageData, 'base64');  
       
-      // Temp fayl yaratish (extension mimeType ga qarab)
-      const ext = mimeType.split('/')[1] || 'png';  // Agar aniqlanmasa, png
+      const ext = mimeType.split('/')[1] || 'png';  
       const tempPath = `uploads/temp_${Date.now()}.${ext}`;
-      fs.writeFileSync(tempPath, imageBuffer);  // Faylga yozish
+      fs.writeFileSync(tempPath, imageBuffer);  
       
       await bot.sendPhoto(process.env.ADMIN_ID, tempPath, { caption: text, reply_markup: mk });
       
-      fs.unlinkSync(tempPath);  // Temp faylni o'chirish
+      fs.unlinkSync(tempPath); 
     } catch (e) {
       console.log('Screenshot error:', e.message);
       await bot.sendMessage(process.env.ADMIN_ID, `${text}\n\n❌ Chekni yuklashda xatolik: ${e.message}`, { reply_markup: mk });
@@ -459,7 +445,7 @@ bot.on('web_app_data', async (msg) => {
     await bot.sendMessage(process.env.ADMIN_ID, `${text}\n\n📸 Chek yo'q`, { reply_markup: mk });
   }
 
-  await bot.sendMessage(uid, "✅ So'rov yuborildi! Admin tekshirmoqda...");  // Agar kerak bo'lmasa, olib tashlang
+  await bot.sendMessage(uid, "✅ So'rov yuborildi! Admin tekshirmoqda...");  
 }
 
 
@@ -468,7 +454,6 @@ bot.on('web_app_data', async (msg) => {
   }
 });
 
-// ===== PHOTO HANDLER =====
 bot.on('photo', async (msg) => {
   const uid = msg.from.id.toString();
   if (!(uid in awaitingPhoto)) return;
@@ -511,7 +496,6 @@ app.post('/api/submit-payment', async (req, res) => {
         const { payment } = req.body;
         const pay = new Payment(payment);
         await pay.save();
-        // Admin ga xabar yuborish (bot orqali)
         const mk = {
             inline_keyboard: [
                 [{ text: "✅ Tasdiqlash", callback_data: `ap_${pay.id}` }],
@@ -520,7 +504,6 @@ app.post('/api/submit-payment', async (req, res) => {
         };
         await bot.sendMessage(process.env.ADMIN_ID, `💳 YANGI TO'LOV SO'ROVI\n\n👤 ${pay.userName}\n📦 ${pay.product}\n💰 ${pay.amount}`);
         if (pay.screenshot) {
-            // Screenshot yuborish (base64 dan)
             const tempPath = base64Img.imgSync(`data:image/png;base64,${pay.screenshot.split(',')[1]}`, 'uploads', `temp_${Date.now()}`);
             await bot.sendPhoto(process.env.ADMIN_ID, tempPath, { caption: `📸 Chek - ${pay.userName}`, reply_markup: mk });
             require('fs').unlinkSync(tempPath);
@@ -531,7 +514,6 @@ app.post('/api/submit-payment', async (req, res) => {
     }
 });
 
-// ===== ADMIN PAYMENT =====
 
 bot.on('callback_query', async (query) => {
   if (query.data.startsWith('ap_') || query.data.startsWith('rj_')) {
@@ -575,16 +557,13 @@ bot.on('callback_query', async (query) => {
             await u.save();
       await payment.save();
       await bot.answerCallbackQuery(query.id, { text: "✅ Tasdiqlandi!" });
-      // Xabar turini tekshirib, mos funksiyani ishlat
       const newText = `✅ TASDIQLANDI\n\n👤 ${payment.userName}\n📦 ${payment.product}\n💰 ${payment.amount}`;
       if (query.message.photo) {
-        // Rasm xabari – caption'ni edit qil
         await bot.editMessageCaption(newText, {
           chat_id: query.message.chat.id,
           message_id: query.message.message_id
         });
       } else {
-        // Text xabari – text'ni edit qil
         await bot.editMessageText(newText, {
           chat_id: query.message.chat.id,
           message_id: query.message.message_id
@@ -595,16 +574,13 @@ bot.on('callback_query', async (query) => {
       await payment.save();
       await bot.sendMessage(uid, "❌ To'lov rad etildi\n\nSabab: Chek tasdiqlanmadi.\nIltimos qayta urinib ko'ring.");
       await bot.answerCallbackQuery(query.id, { text: "❌ Rad etildi!" });
-            // Xabar turini tekshirib, mos funksiyani ishlat
       const newText = `❌ RAD ETILDI\n\n👤 ${payment.userName}\n📦 ${payment.product}\n💰 ${payment.amount}`;
       if (query.message.photo) {
-        // Rasm xabari – caption'ni edit qil
         await bot.editMessageCaption(newText, {
           chat_id: query.message.chat.id,
           message_id: query.message.message_id
         });
       } else {
-        // Text xabari – text'ni edit qil
         await bot.editMessageText(newText, {
           chat_id: query.message.chat.id,
           message_id: query.message.message_id
@@ -614,7 +590,6 @@ bot.on('callback_query', async (query) => {
   }
 });
 
-// ===== ADMIN COMMANDS =====
 bot.onText(/\/panel|\/admin/, async (msg) => {
   const uid = msg.from.id.toString();
   const u = await User.findOne({ id: uid });
@@ -894,7 +869,6 @@ bot.onText(/\/disadmin (.+)/, async (msg, match) => {
     console.log('Setadmin message error:', e.message);
   }
 });
-// ===== RESET ALL USERS =====
 bot.onText(/^\/reset$/, async (msg) => {
   if (msg.from.id.toString() !== process.env.ADMIN_ID) return;
 
@@ -1066,17 +1040,16 @@ app.post('/api/reject-payment', async (req, res) => {
 app.get('/api/admin-payments', async (req, res) => {
     try {
         const pending = await Payment.find({ status: 'pending' });
-        // Screenshot'ni base64 ga aylantirish (agar file_id bo'lsa, uni olish kerak, lekin kodda base64 saqlanadi)
         const result = pending.map(p => ({
             ...p.toObject(),
-            screenshot: p.screenshot // Agar base64 bo'lsa, shunday qoldir; agar file_id bo'lsa, uni base64 ga aylantir
+            screenshot: p.screenshot 
         }));
         res.json(result);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
-// ===== LOAD AND RUN =====
+
 const loadData = async () => {
   const userCount = await User.countDocuments();
   const paymentCount = await Payment.countDocuments();
